@@ -1,11 +1,11 @@
 use std::fs::File;
 use std::io::Write;
-use main::main;
+use super::main;
 
 pub fn write() -> std::io::Result<()> {
 
     println!("New File");
-    let nixname = main::nixname;
+    let nixname = super::main::nixname;
     let dmgname = main.dmgname;
     let hash = main.hash;
     let version = main.version;
