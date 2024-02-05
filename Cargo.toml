@@ -6,3 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+dmg = "0.1.2"
+download_rs = "0.2.0"
+glob = "0.3.1"
