@@ -1,7 +1,6 @@
 use std::env;
 use std::io;
 use std::fs::File;
-use std::io::BufRead;
 use std::process::Command;
 //use std::fmt::Display;
 use download_rs::async_download::Download;
@@ -9,7 +8,7 @@ use glob::glob;
 use dmg::Attach;
 use std::error::Error;
 use std::io::Write;
-use std::iter;
+use std::str::Split;
 //use std::ffi::OsString;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -17,30 +16,47 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let dmgname = &args[1];
 
-    let stdin = io::stdin();
-    let mut inputs = stdin.lines();
-
+    let precommand: ();
+    let command: ();
+   
+    //Grabs Name
     println!("Name of package");
-    let mut name = inputs.next().unwrap().unwrap().trim().to_owned();
+    let mut name = String::new();
 
+    io::stdin()
+        .read_line(&mut name)
+        .expect("Failed to read line");
+
+    name = name.trim().to_owned();
+    //
+    
+    //Downloads DMG file for processing
     let download = Download::new(dmgname,Some("target.dmg"),None);
 
     match download.download() {
     Ok(_) => println!("Downloaded"),
     Err(e) => println!("Failure"),
-
     }
+    //
 
+    //Grabs Version of the package
     println!("Version");
-    let mut version = inputs.next().unwrap().unwrap().trim().to_owned();
+    let mut version = String::new();
 
+
+    io::stdin()
+        .read_line(&mut version)
+        .expect("Failed to read line");
+
+    version = version.trim().to_owned();
+    //
+    //Mounts DMG
     println!("Moumnting .dmg Image");
-
 
     let info = Attach::new("target.dmg").with().expect("could not attach");
     println!("Mounted at {:?}", info.mount_point);
 
-
+    //Finds .app directory in mounted DMG
     let path = format!("/Volumes/*/*.app");
     let binding = glob(&path).unwrap().next().unwrap().unwrap();
     let appname = binding.display().to_string();
@@ -49,7 +65,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let last = appnamesplit.last().unwrap();
     println!("Found .app Directory");
     println!("{:?}", last);
+    
 
+    //Hashes the DMG file
     println!("Hashing");
     let _prehash = Command::new("nix")
         .arg("hash")
@@ -60,20 +78,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .arg("target.dmg")
         .output()
         .expect("Failed Command");
-
-    let hash = match std::str::from_utf8(&_prehash.stdout) {
-        Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
-        Ok(v) => v,
-    };
-
-    let hashsplit:Vec<&str> = hash.split("\n").collect();
-    let hashres = hashsplit.iter().nth(0).unwrap();
-    let hashf = hashres.trim_matches('"').to_string();     
-
+    //Splits the hash output in order to format it for file
+    //let hash: &str = _prehash.split('"'); //Similar to line 64 but pops new error?
     println!("Hashing Complete");
-    println!("{}", hashf);
-  //
-    let content_str: String = format!(r#"{{ stdenv, undmg, pkgs }}:
+    println!("{:?}", _prehash);
+    //
+    
+    //Assembles the contents of the .nix file
+    let content_str: String = format!(r#"{{ stdenv, undmg }}:
                  
 stdenv.mkDerivation rec {{
     pname = "{0}";
@@ -81,8 +93,8 @@ stdenv.mkDerivation rec {{
     src = pkgs.fetchurl {{
         recursiveHash = true;
         url = "{2}";
-        hash = "sha256-{3}";
-        name = "target.dmg";
+        hash = "{3:?}";
+        name = "target.dmg"
     }};
                      
                      
@@ -94,15 +106,17 @@ stdenv.mkDerivation rec {{
                      
     installPhase = ''
         ls
-        mkdir -p $out/Applications/
+        mkdir -p #out/Applications/
         cp -r {0}.app $out/Applications/
     '';
-}}"#, name, version, dmgname, hashf);
+}}"#, name, version, dmgname, _prehash);
     let content = content_str.as_bytes();
+
+
+    //Creates .nix file and writes content to file
     let mut f = File::create("target.nix");
     f?.write_all(content);
     Ok(())
 
-    //println!("Cleaning up");
 }
 
