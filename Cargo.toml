@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 author = "ArkieSoft"
 repository = "https://github.com/ArkieSoft/dmg2nix"
-license = "GPL 3.0 or Later"
+license = "GPL-3.0-only"
 description = "A wrapper that takes a download link for a dmg archive and generates a .nix file derivative"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
