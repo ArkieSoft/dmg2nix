@@ -1,15 +1,15 @@
 use std::env;
 use std::io;
 use std::fs::File;
-use std::io::BufRead;
+//use std::io::BufRead;
 use std::process::Command;
 //use std::fmt::Display;
 use download_rs::async_download::Download;
 use glob::glob;
 use dmg::Attach;
-use std::error::Error;
+//use std::error::Error;
 use std::io::Write;
-use std::iter;
+//use std::iter;
 //use std::ffi::OsString;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -21,18 +21,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut inputs = stdin.lines();
 
     println!("Name of package");
-    let mut name = inputs.next().unwrap().unwrap().trim().to_owned();
+    let name = inputs.next().unwrap().unwrap().trim().to_owned();
 
     let download = Download::new(dmgname,Some("target.dmg"),None);
 
     match download.download() {
     Ok(_) => println!("Downloaded"),
-    Err(e) => println!("Failure"),
+    Err(_e) => println!("Failure"),
 
     }
 
     println!("Version");
-    let mut version = inputs.next().unwrap().unwrap().trim().to_owned();
+    let version = inputs.next().unwrap().unwrap().trim().to_owned();
 
     println!("Moumnting .dmg Image");
 
@@ -99,8 +99,8 @@ stdenv.mkDerivation rec {{
     '';
 }}"#, name, version, dmgname, hashf);
     let content = content_str.as_bytes();
-    let mut f = File::create("target.nix");
-    f?.write_all(content);
+    let f = File::create("target.nix");
+    let _ = f?.write_all(content);
     Ok(())
 
     //println!("Cleaning up");
